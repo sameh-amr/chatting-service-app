@@ -1,36 +1,37 @@
 package db
 
 import (
-    "database/sql"
     "fmt"
     "os"
     "time"
 
-    _ "github.com/lib/pq"
+    "gorm.io/driver/postgres"
+    "gorm.io/gorm"
 )
 
-// ConnectDB opens a connection to PostgreSQL and returns *sql.DB
-func ConnectDB() (*sql.DB, error) {
+var DB *gorm.DB
+
+// ConnectDB opens a connection to PostgreSQL using GORM and sets the global DB variable
+func ConnectDB() (*gorm.DB, error) {
     host := os.Getenv("DB_HOST")
     port := os.Getenv("DB_PORT")
     user := os.Getenv("DB_USER")
     password := os.Getenv("DB_PASSWORD")
     dbname := os.Getenv("DB_NAME")
 
-    // Build the connection string
-    psqlInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-        host, port, user, password, dbname)
+    dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
 
-    var db *sql.DB
+    var db *gorm.DB
     var err error
 
     // Retry logic: try connecting up to 10 times with 2 seconds interval
     for i := 0; i < 10; i++ {
-        db, err = sql.Open("postgres", psqlInfo)
+        db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
         if err == nil {
-            err = db.Ping()
-            if err == nil {
+            sqlDB, errPing := db.DB()
+            if errPing == nil && sqlDB.Ping() == nil {
                 fmt.Println("Successfully connected to database!")
+                DB = db
                 return db, nil
             }
         }
@@ -41,12 +42,8 @@ func ConnectDB() (*sql.DB, error) {
     return nil, fmt.Errorf("could not connect to database after 10 attempts: %w", err)
 }
 
-
-
-
-
-
-func CreateTables(db *sql.DB) error {
+// Migrate the schema
+func Migrate() error {
     schema := `
     CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
@@ -82,10 +79,6 @@ func CreateTables(db *sql.DB) error {
     );
     `
 
-    _, err := db.Exec(schema)
-    if err != nil {
-        return fmt.Errorf("failed to create tables: %w", err)
-    }
-    return nil
+    return DB.Exec(schema).Error
 }
 

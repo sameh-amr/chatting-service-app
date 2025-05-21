@@ -115,6 +115,44 @@ Your core logic (models, business rules) should not depend on WebSocket or DB im
 Interface abstractions:
 For database or message storage, you can still define interfaces in db/ or models/ and implement them concretely in db/.
 
+/chatting-service-app
+│
+├── /app                 # Optional: commands, app entrypoints if you want to separate main.go logic
+│   └── main.go          # Your main application entrypoint
+│
+├── /db                  # Database connection and migration logic
+│   └── db.go
+│
+├── /handler             # HTTP handlers (controllers)
+│   └── user_handler.go  # Signup, login, user-related HTTP handlers
+│
+├── /models              # Data models and structs
+│   └── user.go
+│   └── message.go
+│   └── session.go
+│
+├── /repository          # Database access layer (CRUD methods)
+│   └── user_repository.go
+│   └── message_repository.go
+│
+├── /service             # Business logic layer
+│   └── user_service.go
+│   └── message_service.go
+│
+├── /websocket           # WebSocket related code and handlers
+│   └── websocket.go
+│
+├── /utils               # Utility functions/helpers (e.g., password hashing, JWT utils)
+│   └── auth.go
+│   └── validation.go
+│
+├── Dockerfile
+├── docker-compose.yml
+├── go.mod
+├── go.sum
+└── README.md
+
+
 <========================================================================>
 
 4-why did you choose sql over nosql (i think no sql is the correct answer)
