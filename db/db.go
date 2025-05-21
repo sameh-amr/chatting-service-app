@@ -40,3 +40,52 @@ func ConnectDB() (*sql.DB, error) {
 
     return nil, fmt.Errorf("could not connect to database after 10 attempts: %w", err)
 }
+
+
+
+
+
+
+func CreateTables(db *sql.DB) error {
+    schema := `
+    CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+    CREATE TABLE IF NOT EXISTS users (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        username TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS sessions (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+        token TEXT UNIQUE NOT NULL,
+        expires_at TIMESTAMP NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS messages (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        sender_id UUID REFERENCES users(id) ON DELETE SET NULL,
+        content TEXT,
+        media_url TEXT,
+        created_at TIMESTAMP DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS message_recipients (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        message_id UUID REFERENCES messages(id) ON DELETE CASCADE,
+        recipient_id UUID REFERENCES users(id) ON DELETE CASCADE,
+        is_read BOOLEAN DEFAULT FALSE
+    );
+    `
+
+    _, err := db.Exec(schema)
+    if err != nil {
+        return fmt.Errorf("failed to create tables: %w", err)
+    }
+    return nil
+}
+

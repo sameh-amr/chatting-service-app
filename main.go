@@ -4,7 +4,8 @@ import (
     "fmt"
     "log"
     "net/http"
-    "chatting-service-app/db" 
+
+    "chatting-service-app/db"
 )
 
 func main() {
@@ -15,7 +16,13 @@ func main() {
     }
     defer database.Close()
 
-    // Just a simple HTTP handler for testing
+    // Create tables if they do not exist
+    err = db.CreateTables(database)
+    if err != nil {
+        log.Fatal("Failed to create tables:", err)
+    }
+
+    // Simple HTTP handler for testing
     http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
         fmt.Fprintf(w, "Hello from my Go project!")
     })
