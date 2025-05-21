@@ -2,7 +2,7 @@ package httphandlers
 
 import (
     "chatting-service-app/service"
-    "encoding/json"
+    "chatting-service-app/utils"
     "net/http"
 )
 
@@ -20,50 +20,46 @@ type signUpRequest struct {
     Password string `json:"password"`
 }
 
-func (h *UserHandler) SignUpHandler(w http.ResponseWriter, r *http.Request) {
+// Helper: check if method is POST
+func requirePost(w http.ResponseWriter, r *http.Request) bool {
     if r.Method != http.MethodPost {
         w.WriteHeader(http.StatusMethodNotAllowed)
+        return false
+    }
+    return true
+}
+
+func (h *UserHandler) SignUpHandler(w http.ResponseWriter, r *http.Request) {
+    if !requirePost(w, r) {
         return
     }
-
     var req signUpRequest
-    err := json.NewDecoder(r.Body).Decode(&req)
-    if err != nil {
-        http.Error(w, `{"error":"invalid request"}`, http.StatusBadRequest)
+    if !utils.DecodeJSON(r, &req, w) {
         return
     }
-
     token, err := h.userService.SignUpAndToken(req.Username, req.Email, req.Password)
     if err != nil {
-        http.Error(w, `{"error":"`+err.Error()+`"}`, http.StatusBadRequest)
+        utils.WriteJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
         return
     }
-    w.Header().Set("Content-Type", "application/json")
-    w.WriteHeader(http.StatusCreated)
-    json.NewEncoder(w).Encode(map[string]string{"token": token})
+    utils.WriteJSON(w, http.StatusCreated, map[string]string{"token": token})
 }
 
 func (h *UserHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
-    if r.Method != http.MethodPost {
-        w.WriteHeader(http.StatusMethodNotAllowed)
+    if !requirePost(w, r) {
         return
     }
-
     var req struct {
         Email    string `json:"email"`
         Password string `json:"password"`
     }
-    err := json.NewDecoder(r.Body).Decode(&req)
-    if err != nil {
-        http.Error(w, `{"error":"invalid request"}`, http.StatusBadRequest)
+    if !utils.DecodeJSON(r, &req, w) {
         return
     }
-
     token, err := h.userService.LoginAndToken(req.Email, req.Password)
     if err != nil {
-        http.Error(w, `{"error":"invalid email or password"}`, http.StatusUnauthorized)
+        utils.WriteJSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid email or password"})
         return
     }
-    w.Header().Set("Content-Type", "application/json")
-    json.NewEncoder(w).Encode(map[string]string{"token": token})
+    utils.WriteJSON(w, http.StatusOK, map[string]string{"token": token})
 }
