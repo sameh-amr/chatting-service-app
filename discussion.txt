@@ -134,3 +134,8 @@ You want to combine it with a cache layer (e.g., Redis) for fast reads.
 
 <========================================================================>
 
+5-talk about the db credentials as they should bemoved better to environment variable?
+
+<========================================================================>
+
+
