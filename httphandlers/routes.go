@@ -11,7 +11,7 @@ func SetupRouter(userHandler *UserHandler) *mux.Router {
 
     authRouter := r.PathPrefix("/auth").Subrouter()
     authRouter.HandleFunc("/signup", userHandler.SignUpHandler).Methods("POST")
-
+    authRouter.HandleFunc("/login", userHandler.LoginHandler).Methods("POST")
 
     r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
         w.Write([]byte("Hello from my Go project!"))

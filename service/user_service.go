@@ -43,3 +43,14 @@ func (s *UserService) SignUp(username, email, password string) error {
 
     return s.repo.CreateUser(user)
 }
+
+func (s *UserService) Authenticate(email, password string) (*models.User, error) {
+    user, err := s.repo.GetUserByEmail(email)
+    if err != nil || user == nil {
+        return nil, errors.New("invalid email or password")
+    }
+    if !utils.CheckPasswordHash(password, user.Password) {
+        return nil, errors.New("invalid email or password")
+    }
+    return user, nil
+}

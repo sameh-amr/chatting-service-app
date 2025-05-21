@@ -1,9 +1,13 @@
 package httphandlers
 
 import (
+    "chatting-service-app/service"
     "encoding/json"
     "net/http"
-    "chatting-service-app/service"
+    "os"
+    "time"
+
+    "github.com/golang-jwt/jwt/v5"
 )
 
 type UserHandler struct {
@@ -42,4 +46,48 @@ func (h *UserHandler) SignUpHandler(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "application/json")
     w.WriteHeader(http.StatusCreated)
     json.NewEncoder(w).Encode(map[string]string{"message": "user created successfully"})
+}
+
+func (h *UserHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
+    if r.Method != http.MethodPost {
+        w.WriteHeader(http.StatusMethodNotAllowed)
+        return
+    }
+
+    var req struct {
+        Email    string `json:"email"`
+        Password string `json:"password"`
+    }
+    err := json.NewDecoder(r.Body).Decode(&req)
+    if err != nil {
+        http.Error(w, `{"error":"invalid request"}`, http.StatusBadRequest)
+        return
+    }
+
+    user, err := h.userService.Authenticate(req.Email, req.Password)
+    if err != nil {
+        http.Error(w, `{"error":"invalid email or password"}`, http.StatusUnauthorized)
+        return
+    }
+
+    // Generate JWT token
+    secret := os.Getenv("JWT_SECRET")
+    if secret == "" {
+        secret = "dev_secret" // fallback for dev
+    }
+    claims := jwt.MapClaims{
+        "user_id": user.ID,
+        "exp":     time.Now().Add(24 * time.Hour).Unix(),
+    }
+    token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+    tokenString, err := token.SignedString([]byte(secret))
+    if err != nil {
+        http.Error(w, `{"error":"could not generate token"}`, http.StatusInternalServerError)
+        return
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(map[string]string{
+        "token": tokenString,
+    })
 }
