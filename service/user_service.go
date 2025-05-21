@@ -54,3 +54,31 @@ func (s *UserService) Authenticate(email, password string) (*models.User, error)
     }
     return user, nil
 }
+
+func (s *UserService) SignUpAndToken(username, email, password string) (string, error) {
+    err := s.SignUp(username, email, password)
+    if err != nil {
+        return "", err
+    }
+    user, err := s.Authenticate(email, password)
+    if err != nil || user == nil {
+        return "", err
+    }
+    token, err := utils.GenerateJWT(user.ID.String())
+    if err != nil {
+        return "", err
+    }
+    return token, nil
+}
+
+func (s *UserService) LoginAndToken(email, password string) (string, error) {
+    user, err := s.Authenticate(email, password)
+    if err != nil || user == nil {
+        return "", err
+    }
+    token, err := utils.GenerateJWT(user.ID.String())
+    if err != nil {
+        return "", err
+    }
+    return token, nil
+}
