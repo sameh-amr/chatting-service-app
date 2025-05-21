@@ -20,10 +20,10 @@ func main() {
     }
 
     // Drop all tables using GORM for testing and development purposes
-    err = db.DB.Migrator().DropTable(&models.MessageRecipient{}, &models.Message{}, &models.User{}, &models.Session{})
-    if err != nil {
-        log.Fatal("Failed to drop tables:", err)
-    }
+    // err = db.DB.Migrator().DropTable(&models.MessageRecipient{}, &models.Message{}, &models.User{}, &models.Session{})
+    // if err != nil {
+    //     log.Fatal("Failed to drop tables:", err)
+    // }
 
     // GORM AutoMigrate for your models
     err = db.DB.AutoMigrate(
