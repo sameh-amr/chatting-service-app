@@ -46,3 +46,7 @@ func (s *MessageService) SendMessage(req dto.SendMessageRequest) error {
 func (s *MessageService) GetMessagesBetweenUsers(user1ID, user2ID string) ([]models.Message, error) {
     return s.repo.GetMessagesBetweenUsers(user1ID, user2ID)
 }
+
+func (s *MessageService) GetAllMessagesForUser(userID string) ([]models.Message, error) {
+    return s.repo.GetAllMessagesForUser(userID)
+}

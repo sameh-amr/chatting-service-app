@@ -16,7 +16,8 @@ func SetupRouter(userHandler *UserHandler, hub *websocket.Hub, messageHandler *M
 
     // Message routes
     r.HandleFunc("/messages", messageHandler.SendMessageHandler).Methods("POST")
-    r.HandleFunc("/messages", messageHandler.GetMessagesBetweenUsersHandler).Methods("GET")
+    r.HandleFunc("/messages", messageHandler.GetMessagesBetweenUsersHandler).Methods("GET").Queries("user1", "{user1}", "user2", "{user2}")
+    r.HandleFunc("/messages", messageHandler.GetAllMessagesForUserHandler).Methods("GET").Queries("user", "{user}")
 
     // WebSocket route
     r.HandleFunc("/ws", ServeWs(hub)).Methods("GET")

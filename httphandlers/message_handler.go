@@ -62,3 +62,17 @@ func (h *MessageHandler) GetMessagesBetweenUsersHandler(w http.ResponseWriter, r
     }
     utils.WriteJSON(w, http.StatusOK, messages)
 }
+
+func (h *MessageHandler) GetAllMessagesForUserHandler(w http.ResponseWriter, r *http.Request) {
+    userID := r.URL.Query().Get("user")
+    if userID == "" {
+        utils.WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "user is required"})
+        return
+    }
+    messages, err := h.messageService.GetAllMessagesForUser(userID)
+    if err != nil {
+        utils.WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": "could not fetch messages"})
+        return
+    }
+    utils.WriteJSON(w, http.StatusOK, messages)
+}
