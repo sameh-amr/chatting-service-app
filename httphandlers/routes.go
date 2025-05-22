@@ -19,6 +19,10 @@ func SetupRouter(userHandler *UserHandler, hub *websocket.Hub, messageHandler *M
     r.HandleFunc("/messages", messageHandler.GetMessagesBetweenUsersHandler).Methods("GET").Queries("user1", "{user1}", "user2", "{user2}")
     r.HandleFunc("/messages", messageHandler.GetAllMessagesForUserHandler).Methods("GET").Queries("user", "{user}")
 
+    // Upload route
+    r.HandleFunc("/upload", UploadHandler).Methods("POST")
+    r.PathPrefix("/uploads/").Handler(http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads"))))
+
     // WebSocket route
     r.HandleFunc("/ws", ServeWs(hub)).Methods("GET")
 
