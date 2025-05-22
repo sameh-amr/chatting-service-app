@@ -53,3 +53,12 @@ func (r *UserRepository) GetOnlineUsers() ([]models.User, error) {
     err := db.DB.Where("is_online = ?", true).Find(&users).Error
     return users, err
 }
+
+func (r *UserRepository) GetUserByID(userID string) (*models.User, error) {
+    var user models.User
+    err := db.DB.Where("id = ?", userID).First(&user).Error
+    if errors.Is(err, gorm.ErrRecordNotFound) {
+        return nil, nil
+    }
+    return &user, err
+}

@@ -90,3 +90,11 @@ func (s *UserService) SetOnlineStatus(userID string, isOnline bool) error {
 func (s *UserService) GetOnlineUsers() ([]models.User, error) {
     return s.repo.GetOnlineUsers()
 }
+
+func (s *UserService) GetAllUsersExcept(userID string) ([]models.User, error) {
+    return s.repo.GetAllUsersExcept(userID)
+}
+
+func (s *UserService) GetUserByID(userID string) (*models.User, error) {
+    return s.repo.GetUserByID(userID)
+}
