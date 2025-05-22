@@ -11,10 +11,11 @@ import (
 
 type MessageHandler struct {
     messageService *service.MessageService
+    recipientService *service.MessageRecipientService
 }
 
-func NewMessageHandler(ms *service.MessageService) *MessageHandler {
-    return &MessageHandler{messageService: ms}
+func NewMessageHandler(ms *service.MessageService, rs *service.MessageRecipientService) *MessageHandler {
+    return &MessageHandler{messageService: ms, recipientService: rs}
 }
 
 func (h *MessageHandler) SendMessageHandler(w http.ResponseWriter, r *http.Request) {
@@ -75,4 +76,34 @@ func (h *MessageHandler) GetAllMessagesForUserHandler(w http.ResponseWriter, r *
         return
     }
     utils.WriteJSON(w, http.StatusOK, messages)
+}
+
+func (h *MessageHandler) MarkMessageDeliveredHandler(w http.ResponseWriter, r *http.Request) {
+    messageID := r.URL.Query().Get("message_id")
+    recipientID := r.URL.Query().Get("recipient_id")
+    if messageID == "" || recipientID == "" {
+        utils.WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "message_id and recipient_id are required"})
+        return
+    }
+    err := h.recipientService.SetDeliveredAt(messageID, recipientID)
+    if err != nil {
+        utils.WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": "could not mark as delivered"})
+        return
+    }
+    utils.WriteJSON(w, http.StatusOK, map[string]string{"status": "delivered"})
+}
+
+func (h *MessageHandler) MarkMessageReadHandler(w http.ResponseWriter, r *http.Request) {
+    messageID := r.URL.Query().Get("message_id")
+    recipientID := r.URL.Query().Get("recipient_id")
+    if messageID == "" || recipientID == "" {
+        utils.WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "message_id and recipient_id are required"})
+        return
+    }
+    err := h.recipientService.SetReadAt(messageID, recipientID)
+    if err != nil {
+        utils.WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": "could not mark as read"})
+        return
+    }
+    utils.WriteJSON(w, http.StatusOK, map[string]string{"status": "read"})
 }

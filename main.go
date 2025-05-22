@@ -56,9 +56,9 @@ func main() {
     messageRepo := repository.NewMessageRepository()
     messageService := service.NewMessageService(messageRepo, hub, messageRecipientService)
     messageServiceGlobal = messageService
-    messageHandler := httphandlers.NewMessageHandler(messageService)
+    messageHandler := httphandlers.NewMessageHandler(messageService, messageRecipientService)
 
-    router := httphandlers.SetupRouter(userHandler, hub, messageHandler)
+    router := httphandlers.SetupRouter(userHandler, hub, messageHandler, messageRecipientService)
 
     fmt.Println("Server running on http://localhost:8080")
     log.Fatal(http.ListenAndServe(":8080", router))

@@ -4,10 +4,11 @@ import (
     "net/http"
 
     "github.com/gorilla/mux"
+    "chatting-service-app/service"
     "chatting-service-app/websocket"
 )
 
-func SetupRouter(userHandler *UserHandler, hub *websocket.Hub, messageHandler *MessageHandler) *mux.Router {
+func SetupRouter(userHandler *UserHandler, hub *websocket.Hub, messageHandler *MessageHandler, recipientService *service.MessageRecipientService) *mux.Router {
     r := mux.NewRouter()
 
     authRouter := r.PathPrefix("/auth").Subrouter()
@@ -18,6 +19,8 @@ func SetupRouter(userHandler *UserHandler, hub *websocket.Hub, messageHandler *M
     r.HandleFunc("/messages", messageHandler.SendMessageHandler).Methods("POST")
     r.HandleFunc("/messages", messageHandler.GetMessagesBetweenUsersHandler).Methods("GET").Queries("user1", "{user1}", "user2", "{user2}")
     r.HandleFunc("/messages", messageHandler.GetAllMessagesForUserHandler).Methods("GET").Queries("user", "{user}")
+    r.HandleFunc("/messages/delivered", messageHandler.MarkMessageDeliveredHandler).Methods("POST")
+    r.HandleFunc("/messages/read", messageHandler.MarkMessageReadHandler).Methods("POST")
 
     // Upload and download routes
     r.HandleFunc("/upload", UploadHandler).Methods("POST")
