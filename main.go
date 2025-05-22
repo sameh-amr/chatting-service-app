@@ -13,6 +13,8 @@ import (
     "chatting-service-app/websocket"
 )
 
+var messageServiceGlobal *service.MessageService
+
 func main() {
     // Connect to the database
     _, err := db.ConnectDB()
@@ -46,9 +48,14 @@ func main() {
     userService := service.NewUserService(userRepo)
     userHandler := httphandlers.NewUserHandler(userService)
 
+    // Message recipient repository and service
+    messageRecipientRepo := repository.NewMessageRecipientRepository()
+    messageRecipientService := service.NewMessageRecipientService(messageRecipientRepo)
+
     // Message repository, service, and handler
     messageRepo := repository.NewMessageRepository()
-    messageService := service.NewMessageService(messageRepo, hub)
+    messageService := service.NewMessageService(messageRepo, hub, messageRecipientService)
+    messageServiceGlobal = messageService
     messageHandler := httphandlers.NewMessageHandler(messageService)
 
     router := httphandlers.SetupRouter(userHandler, hub, messageHandler)
