@@ -21,7 +21,7 @@ func NewMessageService(repo *repository.MessageRepository, hub *websocket.Hub, r
 }
 
 func (s *MessageService) SendMessage(req dto.SendMessageRequest) error {
-    if req.SenderID == (models.User{}).ID || req.RecipientID == (models.User{}).ID || req.Content == "" {
+    if req.SenderID == (models.User{}).ID || req.Content == "" {
         return errors.New("missing required fields")
     }
     msg := &models.Message{
@@ -36,18 +36,37 @@ func (s *MessageService) SendMessage(req dto.SendMessageRequest) error {
     if err != nil {
         return err
     }
-    // Use recipientService to create MessageRecipient
-    recipient := &models.MessageRecipient{
-        MessageID:   msg.ID,
-        RecipientID: req.RecipientID,
-        DeliveredAt: nil, // Set when delivered in real-time
-        ReadAt:      nil,
-    }
-    _ = s.recipientService.Create(recipient)
-    // Real-time delivery via WebSocket
-    if s.hub != nil {
-        msgBytes, _ := json.Marshal(req)
-        s.hub.SendDirect(req.RecipientID.String(), msgBytes)
+    msgBytes, _ := json.Marshal(req)
+    if req.IsBroadcast {
+        // Broadcast: create MessageRecipient for all users except sender, send concurrently
+        users, err := s.recipientService.userRepo.GetAllUsersExcept(req.SenderID.String())
+        if err != nil {
+            return err
+        }
+        for _, user := range users {
+            recipient := &models.MessageRecipient{
+                MessageID:   msg.ID,
+                RecipientID: user.ID,
+                DeliveredAt: nil,
+                ReadAt:      nil,
+            }
+            _ = s.recipientService.Create(recipient)
+        }
+        if s.hub != nil {
+            s.hub.BroadcastExcept(req.SenderID.String(), msgBytes)
+        }
+    } else {
+        // 1:1: create MessageRecipient for recipient only
+        recipient := &models.MessageRecipient{
+            MessageID:   msg.ID,
+            RecipientID: req.RecipientID,
+            DeliveredAt: nil,
+            ReadAt:      nil,
+        }
+        _ = s.recipientService.Create(recipient)
+        if s.hub != nil {
+            s.hub.SendDirect(req.RecipientID.String(), msgBytes)
+        }
     }
     return nil
 }

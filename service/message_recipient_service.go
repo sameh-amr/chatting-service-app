@@ -7,11 +7,12 @@ import (
 )
 
 type MessageRecipientService struct {
-	repo *repository.MessageRecipientRepository
+	repo     *repository.MessageRecipientRepository
+	userRepo *repository.UserRepository
 }
 
-func NewMessageRecipientService(repo *repository.MessageRecipientRepository) *MessageRecipientService {
-	return &MessageRecipientService{repo: repo}
+func NewMessageRecipientService(repo *repository.MessageRecipientRepository, userRepo *repository.UserRepository) *MessageRecipientService {
+	return &MessageRecipientService{repo: repo, userRepo: userRepo}
 }
 
 func (s *MessageRecipientService) Create(recipient *models.MessageRecipient) error {

@@ -35,3 +35,9 @@ func (r *UserRepository) GetUserByEmail(email string) (*models.User, error) {
     }
     return &user, result.Error
 }
+
+func (r *UserRepository) GetAllUsersExcept(exceptID string) ([]models.User, error) {
+    var users []models.User
+    err := db.DB.Where("id != ?", exceptID).Find(&users).Error
+    return users, err
+}

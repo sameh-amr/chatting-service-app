@@ -50,7 +50,7 @@ func main() {
 
     // Message recipient repository and service
     messageRecipientRepo := repository.NewMessageRecipientRepository()
-    messageRecipientService := service.NewMessageRecipientService(messageRecipientRepo)
+    messageRecipientService := service.NewMessageRecipientService(messageRecipientRepo, userRepo)
 
     // Message repository, service, and handler
     messageRepo := repository.NewMessageRepository()

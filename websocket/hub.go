@@ -33,6 +33,23 @@ func (h *Hub) SendDirect(toID string, data []byte) {
 	h.direct <- DirectMessage{ToID: toID, Data: data}
 }
 
+// BroadcastExcept sends a message to all connected clients except the sender (by user ID), using goroutines for concurrency.
+func (h *Hub) BroadcastExcept(senderID string, data []byte) {
+	for id, client := range h.clientsByID {
+		if id == senderID {
+			continue
+		}
+		go func(c *Client) {
+			select {
+			case c.Send <- data:
+			default:
+				close(c.Send)
+				h.unregister <- c
+			}
+		}(client)
+	}
+}
+
 func (h *Hub) Run() {
 	for {
 		select {

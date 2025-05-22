@@ -50,6 +50,14 @@ func (h *MessageHandler) SendMessageHandler(w http.ResponseWriter, r *http.Reque
 }
 
 func (h *MessageHandler) GetMessagesBetweenUsersHandler(w http.ResponseWriter, r *http.Request) {
+    // JWT check
+    authHeader := r.Header.Get("Authorization")
+    tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
+    _, err := utils.ExtractUserIDFromJWT(tokenStr)
+    if err != nil {
+        utils.WriteJSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid or missing token"})
+        return
+    }
     user1ID := r.URL.Query().Get("user1")
     user2ID := r.URL.Query().Get("user2")
     if user1ID == "" || user2ID == "" {
@@ -65,6 +73,14 @@ func (h *MessageHandler) GetMessagesBetweenUsersHandler(w http.ResponseWriter, r
 }
 
 func (h *MessageHandler) GetAllMessagesForUserHandler(w http.ResponseWriter, r *http.Request) {
+    // JWT check
+    authHeader := r.Header.Get("Authorization")
+    tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
+    _, err := utils.ExtractUserIDFromJWT(tokenStr)
+    if err != nil {
+        utils.WriteJSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid or missing token"})
+        return
+    }
     userID := r.URL.Query().Get("user")
     if userID == "" {
         utils.WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "user is required"})
@@ -79,13 +95,21 @@ func (h *MessageHandler) GetAllMessagesForUserHandler(w http.ResponseWriter, r *
 }
 
 func (h *MessageHandler) MarkMessageDeliveredHandler(w http.ResponseWriter, r *http.Request) {
+    // JWT check
+    authHeader := r.Header.Get("Authorization")
+    tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
+    _, err := utils.ExtractUserIDFromJWT(tokenStr)
+    if err != nil {
+        utils.WriteJSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid or missing token"})
+        return
+    }
     messageID := r.URL.Query().Get("message_id")
     recipientID := r.URL.Query().Get("recipient_id")
     if messageID == "" || recipientID == "" {
         utils.WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "message_id and recipient_id are required"})
         return
     }
-    err := h.recipientService.SetDeliveredAt(messageID, recipientID)
+    err = h.recipientService.SetDeliveredAt(messageID, recipientID)
     if err != nil {
         utils.WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": "could not mark as delivered"})
         return
@@ -94,13 +118,21 @@ func (h *MessageHandler) MarkMessageDeliveredHandler(w http.ResponseWriter, r *h
 }
 
 func (h *MessageHandler) MarkMessageReadHandler(w http.ResponseWriter, r *http.Request) {
+    // JWT check
+    authHeader := r.Header.Get("Authorization")
+    tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
+    _, err := utils.ExtractUserIDFromJWT(tokenStr)
+    if err != nil {
+        utils.WriteJSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid or missing token"})
+        return
+    }
     messageID := r.URL.Query().Get("message_id")
     recipientID := r.URL.Query().Get("recipient_id")
     if messageID == "" || recipientID == "" {
         utils.WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "message_id and recipient_id are required"})
         return
     }
-    err := h.recipientService.SetReadAt(messageID, recipientID)
+    err = h.recipientService.SetReadAt(messageID, recipientID)
     if err != nil {
         utils.WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": "could not mark as read"})
         return
