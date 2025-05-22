@@ -55,7 +55,7 @@ func main() {
 	messageHandler := httphandlers.NewMessageHandler(messageService, messageRecipientService)
 
 	// Start the WebSocket hub
-	hub := websocket.NewHub(userService)
+	hub := websocket.NewHub(userService) // userService implements OnlineStatusSetter
 	go hub.Run()
 
 	router := httphandlers.SetupRouter(userHandler, hub, messageHandler, messageRecipientService)

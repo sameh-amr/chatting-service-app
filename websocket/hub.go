@@ -1,5 +1,11 @@
 package websocket
 
+// Define an interface for online status updates to avoid import cycle
+// This interface can be implemented by any service (e.g., UserService)
+type OnlineStatusSetter interface {
+	SetOnlineStatus(userID string, isOnline bool) error
+}
+
 type DirectMessage struct {
 	ToID string
 	Data []byte
@@ -12,10 +18,10 @@ type Hub struct {
 	direct      chan DirectMessage
 	register    chan *Client
 	unregister  chan *Client
-	userService *UserService // Add this for online status updates
+	userService OnlineStatusSetter // Use interface instead of concrete type
 }
 
-func NewHub(userService *UserService) *Hub {
+func NewHub(userService OnlineStatusSetter) *Hub {
 	return &Hub{
 		clients:     make(map[*Client]bool),
 		clientsByID: make(map[string]*Client),
