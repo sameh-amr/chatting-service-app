@@ -12,9 +12,10 @@ type Hub struct {
 	direct      chan DirectMessage
 	register    chan *Client
 	unregister  chan *Client
+	userService *UserService // Add this for online status updates
 }
 
-func NewHub() *Hub {
+func NewHub(userService *UserService) *Hub {
 	return &Hub{
 		clients:     make(map[*Client]bool),
 		clientsByID: make(map[string]*Client),
@@ -22,6 +23,7 @@ func NewHub() *Hub {
 		direct:      make(chan DirectMessage),
 		register:    make(chan *Client),
 		unregister:  make(chan *Client),
+		userService: userService,
 	}
 }
 
@@ -56,11 +58,17 @@ func (h *Hub) Run() {
 		case client := <-h.register:
 			h.clients[client] = true
 			h.clientsByID[client.ID] = client
+			if h.userService != nil {
+				_ = h.userService.SetOnlineStatus(client.ID, true)
+			}
 		case client := <-h.unregister:
 			if _, ok := h.clients[client]; ok {
 				delete(h.clients, client)
 				delete(h.clientsByID, client.ID)
 				close(client.Send)
+				if h.userService != nil {
+					_ = h.userService.SetOnlineStatus(client.ID, false)
+				}
 			}
 		case message := <-h.broadcast:
 			for client := range h.clients {

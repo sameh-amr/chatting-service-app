@@ -4,6 +4,7 @@ import (
     "chatting-service-app/service"
     "chatting-service-app/utils"
     "net/http"
+    "strings"
 )
 
 type UserHandler struct {
@@ -62,4 +63,29 @@ func (h *UserHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
     utils.WriteJSON(w, http.StatusOK, map[string]string{"token": token})
+}
+
+func (h *UserHandler) GetOnlineUsersHandler(w http.ResponseWriter, r *http.Request) {
+    // JWT check
+    authHeader := r.Header.Get("Authorization")
+    tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
+    _, err := utils.ExtractUserIDFromJWT(tokenStr)
+    if err != nil {
+        utils.WriteJSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid or missing token"})
+        return
+    }
+    users, err := h.userService.GetOnlineUsers()
+    if err != nil {
+        utils.WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": "could not fetch online users"})
+        return
+    }
+    // Optionally, only return ID and Username for privacy
+    var result []map[string]interface{}
+    for _, u := range users {
+        result = append(result, map[string]interface{}{
+            "id":       u.ID,
+            "username": u.Username,
+        })
+    }
+    utils.WriteJSON(w, http.StatusOK, result)
 }

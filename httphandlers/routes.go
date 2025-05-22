@@ -14,6 +14,7 @@ func SetupRouter(userHandler *UserHandler, hub *websocket.Hub, messageHandler *M
     authRouter := r.PathPrefix("/auth").Subrouter()
     authRouter.HandleFunc("/signup", userHandler.SignUpHandler).Methods("POST")
     authRouter.HandleFunc("/login", userHandler.LoginHandler).Methods("POST")
+    authRouter.HandleFunc("/online-users", userHandler.GetOnlineUsersHandler).Methods("GET")
 
     // Message routes
     r.HandleFunc("/messages", messageHandler.SendMessageHandler).Methods("POST")

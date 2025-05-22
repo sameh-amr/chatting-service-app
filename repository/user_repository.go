@@ -41,3 +41,15 @@ func (r *UserRepository) GetAllUsersExcept(exceptID string) ([]models.User, erro
     err := db.DB.Where("id != ?", exceptID).Find(&users).Error
     return users, err
 }
+
+func (r *UserRepository) SetOnlineStatus(userID string, isOnline bool) error {
+    return db.DB.Model(&models.User{}).
+        Where("id = ?", userID).
+        Update("is_online", isOnline).Error
+}
+
+func (r *UserRepository) GetOnlineUsers() ([]models.User, error) {
+    var users []models.User
+    err := db.DB.Where("is_online = ?", true).Find(&users).Error
+    return users, err
+}

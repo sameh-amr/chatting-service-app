@@ -82,3 +82,11 @@ func (s *UserService) LoginAndToken(email, password string) (string, error) {
     }
     return token, nil
 }
+
+func (s *UserService) SetOnlineStatus(userID string, isOnline bool) error {
+    return s.repo.SetOnlineStatus(userID, isOnline)
+}
+
+func (s *UserService) GetOnlineUsers() ([]models.User, error) {
+    return s.repo.GetOnlineUsers()
+}
