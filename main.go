@@ -5,6 +5,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/gorilla/handlers"
+
 	"chatting-service-app/db"
 	"chatting-service-app/httphandlers"
 	"chatting-service-app/models"
@@ -60,6 +62,13 @@ func main() {
 
 	router := httphandlers.SetupRouter(userHandler, hub, messageHandler, messageRecipientService)
 
+	// Add CORS middleware
+	h := handlers.CORS(
+		handlers.AllowedOrigins([]string{"*"}),
+		handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}),
+		handlers.AllowedHeaders([]string{"Authorization", "Content-Type"}),
+	)(router)
+
 	fmt.Println("Server running on http://localhost:8080")
-	log.Fatal(http.ListenAndServe(":8080", router))
+	log.Fatal(http.ListenAndServe(":8080", h))
 }

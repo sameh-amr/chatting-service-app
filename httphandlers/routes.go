@@ -15,6 +15,10 @@ func SetupRouter(userHandler *UserHandler, hub *websocket.Hub, messageHandler *M
     authRouter.HandleFunc("/signup", userHandler.SignUpHandler).Methods("POST")
     authRouter.HandleFunc("/login", userHandler.LoginHandler).Methods("POST")
     authRouter.HandleFunc("/online-users", userHandler.GetOnlineUsersHandler).Methods("GET")
+    // Add endpoint to get all users except self
+    authRouter.HandleFunc("/users", userHandler.GetAllUsersExceptHandler).Methods("GET")
+    // Add endpoint to get current user data
+    authRouter.HandleFunc("/me", userHandler.MeHandler).Methods("GET")
 
     // Message routes
     r.HandleFunc("/messages", messageHandler.SendMessageHandler).Methods("POST")
