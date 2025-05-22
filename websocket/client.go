@@ -1,8 +1,11 @@
 package websocket
 
 import (
+	"encoding/json"
 	"github.com/gorilla/websocket"
+	"github.com/google/uuid"
 	"strings"
+	"chatting-service-app/models"
 )
 
 type Client struct {
@@ -27,11 +30,8 @@ func (c *Client) ReadPump() {
 		if err != nil {
 			break
 		}
-		// Here, parse the message for delivery/read events
-		// For example, expect JSON: {"type":"delivered","message_id":"..."}
 		msgStr := string(message)
 		if strings.Contains(msgStr, "\"type\":\"delivered\"") {
-			// Extract message_id (simple parsing for demo)
 			idIdx := strings.Index(msgStr, "message_id")
 			if idIdx != -1 {
 				start := strings.Index(msgStr[idIdx:], ":") + idIdx + 2
@@ -51,8 +51,75 @@ func (c *Client) ReadPump() {
 					OnMessageRead(messageID, c.ID)
 				}
 			}
+		} else {
+			// Try to parse as wrapped message (with payload)
+			var envelope map[string]interface{}
+			if err := json.Unmarshal(message, &envelope); err == nil {
+				if envelope["type"] == "message" && envelope["payload"] != nil {
+					payloadBytes, _ := json.Marshal(envelope["payload"])
+					var raw map[string]interface{}
+					if err := json.Unmarshal(payloadBytes, &raw); err == nil {
+						var chatMsg models.Message
+						if sender, ok := raw["sender_id"].(string); ok {
+							if uuidVal, err := uuid.Parse(sender); err == nil {
+								chatMsg.SenderID = uuidVal
+							}
+						}
+						if recipient, ok := raw["recipient_id"].(string); ok {
+							if uuidVal, err := uuid.Parse(recipient); err == nil {
+								chatMsg.RecipientID = uuidVal
+							}
+						}
+						if content, ok := raw["content"].(string); ok {
+							chatMsg.Content = content
+						}
+						if isBroadcast, ok := raw["is_broadcast"].(bool); ok {
+							chatMsg.IsBroadcast = isBroadcast
+						}
+						msgBytes, _ := json.Marshal(chatMsg)
+						if chatMsg.Content != "" && chatMsg.RecipientID != uuid.Nil {
+							if chatMsg.IsBroadcast {
+								c.Hub.BroadcastExcept(c.ID, msgBytes)
+							} else {
+								c.Hub.SendDirect(chatMsg.RecipientID.String(), msgBytes)
+							}
+							continue
+						}
+					}
+				}
+			}
+			// Fallback: Try to parse as raw message (no envelope)
+			var raw map[string]interface{}
+			if err := json.Unmarshal(message, &raw); err == nil {
+				var chatMsg models.Message
+				if sender, ok := raw["sender_id"].(string); ok {
+					if uuidVal, err := uuid.Parse(sender); err == nil {
+						chatMsg.SenderID = uuidVal
+					}
+				}
+				if recipient, ok := raw["recipient_id"].(string); ok {
+					if uuidVal, err := uuid.Parse(recipient); err == nil {
+						chatMsg.RecipientID = uuidVal
+					}
+				}
+				if content, ok := raw["content"].(string); ok {
+					chatMsg.Content = content
+				}
+				if isBroadcast, ok := raw["is_broadcast"].(bool); ok {
+					chatMsg.IsBroadcast = isBroadcast
+				}
+				msgBytes, _ := json.Marshal(chatMsg)
+				if chatMsg.Content != "" && chatMsg.RecipientID != uuid.Nil {
+					if chatMsg.IsBroadcast {
+						c.Hub.BroadcastExcept(c.ID, msgBytes)
+					} else {
+						c.Hub.SendDirect(chatMsg.RecipientID.String(), msgBytes)
+					}
+					continue
+				}
+			}
+			// If not a chat message, ignore or handle as needed
 		}
-		c.Hub.broadcast <- message
 	}
 }
 
