@@ -3,6 +3,7 @@ package repository
 import (
     "chatting-service-app/models"
     "chatting-service-app/db"
+    "time"
 )
 
 type MessageRepository struct {}
@@ -31,4 +32,20 @@ func (r *MessageRepository) GetAllMessagesForUser(userID string) ([]models.Messa
         userID, userID,
     ).Order("created_at asc").Find(&messages).Error
     return messages, err
+}
+
+func (r *MessageRepository) CreateMessageRecipient(recipient *models.MessageRecipient) error {
+    return db.DB.Create(recipient).Error
+}
+
+func (r *MessageRepository) SetDeliveredAt(messageID, recipientID string, deliveredAt time.Time) error {
+    return db.DB.Model(&models.MessageRecipient{}).
+        Where("message_id = ? AND recipient_id = ?", messageID, recipientID).
+        Update("delivered_at", deliveredAt).Error
+}
+
+func (r *MessageRepository) SetReadAt(messageID, recipientID string, readAt time.Time) error {
+    return db.DB.Model(&models.MessageRecipient{}).
+        Where("message_id = ? AND recipient_id = ?", messageID, recipientID).
+        Update("read_at", readAt).Error
 }
