@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 	"os"
@@ -28,4 +29,30 @@ func GenerateJWT(userID string) (string, error) {
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(secret))
+}
+
+// ExtractUserIDFromJWT extracts the user ID from a JWT token string
+func ExtractUserIDFromJWT(tokenStr string) (string, error) {
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		secret = "dev_secret"
+	}
+	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("unexpected signing method")
+		}
+		return []byte(secret), nil
+	})
+	if err != nil || !token.Valid {
+		return "", errors.New("invalid token")
+	}
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return "", errors.New("invalid token claims")
+	}
+	userID, ok := claims["user_id"].(string)
+	if !ok {
+		return "", errors.New("user_id not found in token")
+	}
+	return userID, nil
 }

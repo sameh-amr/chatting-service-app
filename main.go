@@ -10,6 +10,7 @@ import (
     "chatting-service-app/models"
     "chatting-service-app/repository"
     "chatting-service-app/service"
+    "chatting-service-app/websocket"
 )
 
 func main() {
@@ -36,12 +37,21 @@ func main() {
         log.Fatal("Failed to migrate tables:", err)
     }
 
+    // Start the WebSocket hub
+    hub := websocket.NewHub()
+    go hub.Run()
+
     // Set up repository, service, and handler
     userRepo := repository.NewUserRepository()
     userService := service.NewUserService(userRepo)
     userHandler := httphandlers.NewUserHandler(userService)
 
-    router := httphandlers.SetupRouter(userHandler)
+    // Message repository, service, and handler
+    messageRepo := repository.NewMessageRepository()
+    messageService := service.NewMessageService(messageRepo, hub)
+    messageHandler := httphandlers.NewMessageHandler(messageService)
+
+    router := httphandlers.SetupRouter(userHandler, hub, messageHandler)
 
     fmt.Println("Server running on http://localhost:8080")
     log.Fatal(http.ListenAndServe(":8080", router))
