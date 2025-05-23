@@ -51,6 +51,11 @@ services:
       - "3000:80"
     networks:
       - twerlo-net
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      - VITE_API_URL=/api
 
 volumes:
   pgdata:

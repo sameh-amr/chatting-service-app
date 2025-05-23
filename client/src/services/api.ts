@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// Use backend service name for Docker network
-const API_URL = 'http://localhost:8080';
+// Use VITE_API_URL from environment or default to '/api' for Docker/Nginx
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const api = axios.create({
   baseURL: API_URL,

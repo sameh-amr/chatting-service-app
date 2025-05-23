@@ -39,5 +39,10 @@ func SetupRouter(userHandler *UserHandler, hub *websocket.Hub, messageHandler *M
         w.Write([]byte("Hello from my Go project!"))
     })
 
+    r.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+        w.WriteHeader(http.StatusOK)
+        w.Write([]byte(`{"status": "ok"}`))
+    }).Methods("GET")
+
     return r
 }

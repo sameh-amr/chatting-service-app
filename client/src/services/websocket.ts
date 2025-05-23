@@ -33,12 +33,19 @@ export const setupWebSocket = (
   }
 
   // Create new WebSocket connection with token as query param
-  const wsProtocol = window.location.protocol === "https:" ? "wss" : "ws";
-  const wsHost =
+  let wsHost: string;
+  if (import.meta.env.VITE_API_URL) {
+    // Use backend service name in Docker Compose
+    wsHost = import.meta.env.VITE_API_URL.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+  } else if (
     window.location.hostname === "localhost" ||
     window.location.hostname === "127.0.0.1"
-      ? "localhost"
-      : window.location.hostname;
+  ) {
+    wsHost = "localhost";
+  } else {
+    wsHost = "backend";
+  }
+  const wsProtocol = window.location.protocol === "https:" ? "wss" : "ws";
   const wsUrl = `${wsProtocol}://${wsHost}:8080/ws?token=${token}`;
   socket = new WebSocket(wsUrl);
 
