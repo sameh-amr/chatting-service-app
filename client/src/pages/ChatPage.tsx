@@ -88,6 +88,22 @@ const ChatPage = () => {
     }
   };
 
+  // New: Broadcast handler
+  const handleBroadcastMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!messageText.trim() || !user?.id) return;
+    try {
+      setIsSending(true);
+      // For broadcast, send the sender's own UUID as recipientId
+      await sendMessage(messageText, user.id, undefined, true);
+      setMessageText('');
+    } catch (error) {
+      console.error('Error sending broadcast message:', error);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   const toggleMobileSidebar = () => {
     setShowMobileSidebar(!showMobileSidebar);
   };
@@ -186,27 +202,26 @@ const ChatPage = () => {
         </div>
         
         {/* Message Input */}
-        {selectedUser && (
-          <form onSubmit={handleSendMessage} className="bg-white border-t p-3">
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="text-gray-500 hover:text-blue-600 p-2 rounded-full hover:bg-gray-100"
-                disabled={isUploading}
-              >
-                {isUploading ? <Upload className="h-5 w-5 animate-pulse" /> : <Paperclip className="h-5 w-5" />}
-              </button>
-              
-              <input
-                type="text"
-                value={messageText}
-                onChange={(e) => setMessageText(e.target.value)}
-                placeholder="Type a message..."
-                className="flex-1 border rounded-full py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                disabled={isSending}
-              />
-              
+        <form onSubmit={selectedUser ? handleSendMessage : (e) => e.preventDefault()} className="bg-white border-t p-3">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="text-gray-500 hover:text-blue-600 p-2 rounded-full hover:bg-gray-100"
+              disabled={isUploading}
+            >
+              {isUploading ? <Upload className="h-5 w-5 animate-pulse" /> : <Paperclip className="h-5 w-5" />}
+            </button>
+            <input
+              type="text"
+              value={messageText}
+              onChange={(e) => setMessageText(e.target.value)}
+              placeholder="Type a message..."
+              className="flex-1 border rounded-full py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              disabled={isSending}
+            />
+            {/* Send to selected user */}
+            {selectedUser && (
               <Button
                 type="submit"
                 variant="primary"
@@ -216,16 +231,28 @@ const ChatPage = () => {
               >
                 <Send className="h-5 w-5" />
               </Button>
-              
-              <input
-                ref={fileInputRef}
-                type="file"
-                onChange={handleFileSelect}
-                className="hidden"
-              />
-            </div>
-          </form>
-        )}
+            )}
+            {/* Broadcast button, always visible */}
+            <Button
+              type="button"
+              variant="secondary"
+              isLoading={isSending}
+              className="rounded-full px-3 py-2"
+              disabled={!messageText.trim()}
+              onClick={handleBroadcastMessage}
+              title="Send broadcast message"
+            >
+              <Send className="h-5 w-5" />
+              <span className="ml-1 hidden sm:inline">Broadcast</span>
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+          </div>
+        </form>
       </div>
     </div>
   );
