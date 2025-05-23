@@ -96,14 +96,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                   >
                     <Avatar 
                       user={user} 
-                      showStatus 
-                      isOnline={onlineUserIds.includes(user.id)} 
+                      showStatus={false} // Remove status dot
                     />
                     <div className="ml-3 text-left">
                       <p className="font-medium text-gray-900">{user.username}</p>
-                      <p className="text-sm text-gray-500">
-                        {onlineUserIds.includes(user.id) ? 'Online' : 'Offline'}
-                      </p>
+                      {/* Remove online/offline status text */}
                     </div>
                   </button>
                 </li>
@@ -120,10 +117,10 @@ const Sidebar: React.FC<SidebarProps> = ({
         {currentUser && (
           <div className="p-4 border-t border-gray-200">
             <div className="flex items-center">
-              <Avatar user={currentUser} />
+              <Avatar user={currentUser} showStatus={false} />
               <div className="ml-3">
                 <p className="font-medium text-gray-900">{currentUser.username}</p>
-                <p className="text-xs text-green-500">Online</p>
+                {/* Remove online status for current user */}
               </div>
             </div>
           </div>
