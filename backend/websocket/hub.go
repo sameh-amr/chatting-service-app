@@ -1,9 +1,15 @@
 package websocket
 
-// Define an interface for online status updates to avoid import cycle
-// This interface can be implemented by any service (e.g., UserService)
+import (
+	"encoding/json"
+	"chatting-service-app/models"
+)
+
+// Extend OnlineStatusSetter to include GetUserByID for user data fetch
+// This avoids import cycles and allows the hub to fetch user info
 type OnlineStatusSetter interface {
 	SetOnlineStatus(userID string, isOnline bool) error
+	GetUserByID(userID string) (*models.User, error)
 }
 
 type DirectMessage struct {
@@ -41,6 +47,59 @@ func (h *Hub) SendDirect(toID string, data []byte) {
 	h.direct <- DirectMessage{ToID: toID, Data: data}
 }
 
+func (h *Hub) getOnlineUserIDs() []string {
+	userIDs := make([]string, 0, len(h.clientsByID))
+	for id := range h.clientsByID {
+		userIDs = append(userIDs, id)
+	}
+	return userIDs
+}
+
+func (h *Hub) broadcastUserOnline(userID string) {
+	// Fetch user data for the new online user
+	var userData map[string]interface{}
+	if h.userService != nil {
+		if user, err := h.userService.GetUserByID(userID); err == nil && user != nil {
+			userData = map[string]interface{}{
+				"id":       user.ID,
+				"username": user.Username,
+				"email":    user.Email,
+			}
+		}
+	}
+	msg := map[string]interface{}{
+		"type":   "user_online",
+		"userId": userID,
+	}
+	if userData != nil {
+		msg["user"] = userData
+	}
+	data, _ := json.Marshal(msg)
+	for client := range h.clients {
+		client.Send <- data
+	}
+}
+
+func (h *Hub) broadcastUserOffline(userID string) {
+	msg := map[string]interface{}{
+		"type":   "user_offline",
+		"userId": userID,
+	}
+	data, _ := json.Marshal(msg)
+	for client := range h.clients {
+		client.Send <- data
+	}
+}
+
+func (h *Hub) sendOnlineUsersList(client *Client) {
+	msg := map[string]interface{}{
+		"type":    "online_users",
+		"userIds": h.getOnlineUserIDs(),
+	}
+	data, _ := json.Marshal(msg)
+	client.Send <- data
+}
+
 // BroadcastExcept sends a message to all connected clients except the sender (by user ID), using goroutines for concurrency.
 func (h *Hub) BroadcastExcept(senderID string, data []byte) {
 	for id, client := range h.clientsByID {
@@ -67,6 +126,8 @@ func (h *Hub) Run() {
 			if h.userService != nil {
 				_ = h.userService.SetOnlineStatus(client.ID, true)
 			}
+			h.sendOnlineUsersList(client)
+			h.broadcastUserOnline(client.ID)
 		case client := <-h.unregister:
 			if _, ok := h.clients[client]; ok {
 				delete(h.clients, client)
@@ -75,6 +136,7 @@ func (h *Hub) Run() {
 				if h.userService != nil {
 					_ = h.userService.SetOnlineStatus(client.ID, false)
 				}
+				h.broadcastUserOffline(client.ID)
 			}
 		case message := <-h.broadcast:
 			for client := range h.clients {
