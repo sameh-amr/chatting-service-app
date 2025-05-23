@@ -4,7 +4,8 @@ import Avatar from './Avatar';
 import { User } from '../types';
 
 interface SidebarProps {
-  onlineUsers: User[]|null;
+  onlineUsers: User[]; // always array, never null
+  onlineUserIds?: string[]; // Add this prop
   selectedUser: User | null;
   setSelectedUser: (user: User | null) => void;
   showMobile: boolean;
@@ -13,7 +14,8 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
-  onlineUsers,
+  onlineUsers = [], // default to []
+  onlineUserIds = [], // Default to empty array
   selectedUser,
   setSelectedUser,
   showMobile,
@@ -21,15 +23,14 @@ const Sidebar: React.FC<SidebarProps> = ({
   currentUser
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [filteredUsers, setFilteredUsers] = useState<User[]|null>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]); // always array
 
   // Filter users based on search term
   useEffect(() => {
-    console.log(onlineUsers)
-    const filtered = onlineUsers?.filter(user => 
+    const filtered = (onlineUsers || []).filter(user => 
       user.id !== currentUser?.id && // Filter out current user
       user.username.toLowerCase().includes(searchTerm.toLowerCase())
-    )||null;
+    );
     setFilteredUsers(filtered);
   }, [onlineUsers, searchTerm, currentUser]);
 
@@ -80,7 +81,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         
         {/* Users list */}
         <div className="flex-1 overflow-y-auto">
-          {filteredUsers&&filteredUsers.length > 0 ? (
+          {filteredUsers && filteredUsers.length > 0 ? (
             <ul className="divide-y divide-gray-200">
               {filteredUsers.map(user => (
                 <li key={user.id}>
@@ -96,12 +97,12 @@ const Sidebar: React.FC<SidebarProps> = ({
                     <Avatar 
                       user={user} 
                       showStatus 
-                      isOnline={onlineUsers?.some(u => u.id === user.id)} 
+                      isOnline={onlineUserIds.includes(user.id)} 
                     />
                     <div className="ml-3 text-left">
                       <p className="font-medium text-gray-900">{user.username}</p>
                       <p className="text-sm text-gray-500">
-                        {onlineUsers?.some(u => u.id === user.id) ? 'Online' : 'Offline'}
+                        {onlineUserIds.includes(user.id) ? 'Online' : 'Offline'}
                       </p>
                     </div>
                   </button>

@@ -13,6 +13,7 @@ const ChatPage = () => {
   const { 
     messages, 
     onlineUsers, 
+    onlineUserIds, // Get onlineUserIds for real-time presence
     selectedUser, 
     setSelectedUser, 
     sendMessage,
@@ -123,6 +124,7 @@ const ChatPage = () => {
       {/* Sidebar */}
       <Sidebar
         onlineUsers={onlineUsers}
+        onlineUserIds={onlineUserIds} // Pass onlineUserIds for real-time presence
         selectedUser={selectedUser}
         setSelectedUser={setSelectedUser}
         showMobile={showMobileSidebar}

@@ -4,7 +4,7 @@ let currentToken: string | null = null;
 
 // Types for message handlers (kept for type safety, but handlers won't be called)
 type MessageHandler = (message: any) => void;
-type ConnectionHandler = (users: any[]) => void;
+type ConnectionHandler = (data: any, type: string) => void;
 type MessageStatusUpdateHandler = (messageId: string, status: "delivered" | "read") => void;
 
 // Store handlers (kept for potential reconnection logic, but won't be actively used for messages)
@@ -71,22 +71,23 @@ export const setupWebSocket = (
       } else if (data.type === undefined && data.content && data.sender_id && data.recipient_id) {
         // Backend sent a raw message object (camelCase)
         onMessage(data);
-      } else {
+      } else if (typeof data.type === "string") {
+        // Only call connectionHandler for known presence types
         switch (data.type) {
           case "delivered":
-            // Handle delivered status update
             if (data.message_id) {
               updateMessageStatus(data.message_id, "delivered");
             }
             break;
           case "read":
-            // Handle read status update
             if (data.message_id) {
               updateMessageStatus(data.message_id, "read");
             }
             break;
-          case "users_online":
-            onConnection(data.payload);
+          case "online_users":
+          case "user_online":
+          case "user_offline":
+            if (connectionHandler) connectionHandler(data, data.type);
             break;
           case "error":
             console.error("WebSocket error:", data.payload);
