@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useRef, MutableRefObject } from 'react';
 import { useAuth } from './AuthContext';
 import { Message, User } from '../types';
 import api from '../services/api';
@@ -53,6 +53,17 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [onlineUsers, setOnlineUsers] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+
+  const selectedUserRef = useRef<User | null>(null) as MutableRefObject<User | null>;
+  const userIdRef = useRef<string | null | undefined>(undefined) as MutableRefObject<string | null | undefined>;
+
+  useEffect(() => {
+    selectedUserRef.current = selectedUser;
+  }, [selectedUser]);
+
+  useEffect(() => {
+    userIdRef.current = userId;
+  }, [userId]);
 
   // Fetch online users on login/logout
   useEffect(() => {
@@ -114,23 +125,24 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const handleWebSocketMessage = (message: any) => {
     console.log('[WebSocket] Raw incoming message:', message);
     const mapped = mapMessageFromApi(message);
-    console.log('[WebSocket] Mapped message:', mapped, 'selectedUser:', selectedUser, 'userId:', userId);
-    // Only add WebSocket message if it's not from the current user
-    if (mapped.sender_id === userId) return;
+    const currentSelectedUser = selectedUserRef.current;
+    const currentUserId = userIdRef.current;
+    console.log('[WebSocket] Mapped message:', mapped, 'selectedUser:', currentSelectedUser, 'userId:', currentUserId);
     // Allow messages with content (even if no id) for real-time recipient display
     if (!mapped.content) {
       console.warn('Received message with no content:', message);
       return;
     }
     setMessages(prev => {
-      if (mapped.id && prev.some(m => m.id === mapped.id && m.content === mapped.content)) return prev;
       if (
-        selectedUser &&
-        ((mapped.sender_id === selectedUser.id && mapped.recipient_id === userId) ||
-          (mapped.sender_id === userId && mapped.recipient_id === selectedUser.id))
+        currentSelectedUser &&
+        (
+          (mapped.sender_id === currentSelectedUser.id && mapped.recipient_id === currentUserId) ||
+          (mapped.sender_id === currentUserId && mapped.recipient_id === currentSelectedUser.id)
+        )
       ) {
-        if (mapped.sender_id === selectedUser.id) {
-          markAsDelivered(mapped.id, userId!);
+        if (mapped.sender_id === currentSelectedUser.id) {
+          markAsDelivered(mapped.id, currentUserId!);
         }
         return [...prev, mapped];
       }
