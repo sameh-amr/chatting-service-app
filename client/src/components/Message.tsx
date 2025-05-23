@@ -59,9 +59,12 @@ const Message: React.FC<MessageProps> = ({ message, isCurrentUser }) => {
         
         <div className={`${timeClasses} text-xs mt-1 flex items-center`}>
           <span>
-            
+            {message.created_at && message.created_at !== '0001-01-01T00:00:00Z' ? (
+              format(new Date(message.created_at), 'MMM d, yyyy h:mm a')
+            ) : (
+              ''
+            )}
           </span>
-          
           {isCurrentUser && (
             <span className="ml-1">
               {message.read ? (

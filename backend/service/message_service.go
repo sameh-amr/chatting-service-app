@@ -24,13 +24,17 @@ func (s *MessageService) SendMessage(req dto.SendMessageRequest) error {
     if req.SenderID == (models.User{}).ID || req.Content == "" {
         return errors.New("missing required fields")
     }
+    // Always set CreatedAt to now if not set
+    if req.CreatedAt.IsZero() {
+        req.CreatedAt = time.Now()
+    }
     msg := &models.Message{
         SenderID:    req.SenderID,
         RecipientID: req.RecipientID,
         Content:     req.Content,
         MediaURL:    req.MediaURL,
         IsBroadcast: req.IsBroadcast,
-        CreatedAt:   time.Now(),
+        CreatedAt:   req.CreatedAt,
     }
     err := s.repo.SendMessage(msg)
     if err != nil {
@@ -52,7 +56,7 @@ func (s *MessageService) SendMessage(req dto.SendMessageRequest) error {
                     Content:     req.Content,
                     MediaURL:    req.MediaURL,
                     IsBroadcast: true,
-                    CreatedAt:   time.Now(),
+                    CreatedAt:   req.CreatedAt,
                 }
                 _ = s.repo.SendMessage(msgCopy)
                 recipient := &models.MessageRecipient{

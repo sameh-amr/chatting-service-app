@@ -36,7 +36,7 @@ function mapMessageFromApi(msg: any): Message {
     content: msg.Content || msg.content,
     media_url: msg.MediaURL || msg.media_url,
     is_broadcast: msg.IsBroadcast ?? msg.is_broadcast ?? false,
-    created_at: msg.CreatedAt || msg.created_at || new Date().toISOString(),
+    created_at: msg.CreatedAt || msg.created_at || (msg.timestamp ? msg.timestamp : new Date().toISOString()),
     delivered: msg.Delivered ?? msg.delivered ?? false,
     read: msg.Read ?? msg.read ?? false,
   };
@@ -181,6 +181,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         content,
         media_url: mediaUrl,
         is_broadcast: isBroadcast,
+        created_at: new Date().toISOString(), // Always send created_at
       };
 
       // Optimistically add the message for the sender
@@ -192,7 +193,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         content,
         media_url: mediaUrl,
         is_broadcast: isBroadcast,
-        created_at: new Date().toISOString(),
+        created_at: newMessageApi.created_at, // Use the same timestamp
         delivered: false,
         read: false,
       };

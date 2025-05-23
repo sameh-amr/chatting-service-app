@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"strings"
 	"chatting-service-app/models"
+	"time"
 )
 
 type Client struct {
@@ -75,6 +76,11 @@ func (c *Client) ReadPump() {
 						}
 						if isBroadcast, ok := raw["is_broadcast"].(bool); ok {
 							chatMsg.IsBroadcast = isBroadcast
+						}
+						if createdAt, ok := raw["created_at"].(string); ok {
+							if t, err := time.Parse(time.RFC3339, createdAt); err == nil {
+								chatMsg.CreatedAt = t
+							}
 						}
 						msgBytes, _ := json.Marshal(chatMsg)
 						if chatMsg.Content != "" && chatMsg.RecipientID != uuid.Nil {
