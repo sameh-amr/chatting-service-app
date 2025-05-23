@@ -38,22 +38,35 @@ func (s *MessageService) SendMessage(req dto.SendMessageRequest) error {
     }
     msgBytes, _ := json.Marshal(req)
     if req.IsBroadcast {
-        // Broadcast: create MessageRecipient for all users except sender, send concurrently
+        // Broadcast: create MessageRecipient and Message for all users except sender, send concurrently
         users, err := s.recipientService.userRepo.GetAllUsersExcept(req.SenderID.String())
         if err != nil {
             return err
         }
         for _, user := range users {
-            recipient := &models.MessageRecipient{
-                MessageID:   msg.ID,
-                RecipientID: user.ID,
-                DeliveredAt: nil,
-                ReadAt:      nil,
-            }
-            _ = s.recipientService.Create(recipient)
-        }
-        if s.hub != nil {
-            s.hub.BroadcastExcept(req.SenderID.String(), msgBytes)
+            go func(targetUser models.User) {
+                // Create a new message for each recipient
+                msgCopy := &models.Message{
+                    SenderID:    req.SenderID,
+                    RecipientID: targetUser.ID,
+                    Content:     req.Content,
+                    MediaURL:    req.MediaURL,
+                    IsBroadcast: true,
+                    CreatedAt:   time.Now(),
+                }
+                _ = s.repo.SendMessage(msgCopy)
+                recipient := &models.MessageRecipient{
+                    MessageID:   msgCopy.ID,
+                    RecipientID: targetUser.ID,
+                    DeliveredAt: nil,
+                    ReadAt:      nil,
+                }
+                _ = s.recipientService.Create(recipient)
+                if s.hub != nil {
+                    msgBytes, _ := json.Marshal(msgCopy)
+                    s.hub.SendDirect(targetUser.ID.String(), msgBytes)
+                }
+            }(user)
         }
     } else {
         // 1:1: create MessageRecipient for recipient only
