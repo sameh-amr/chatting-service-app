@@ -82,6 +82,9 @@ func (c *Client) ReadPump() {
 								chatMsg.CreatedAt = t
 							}
 						}
+						if mediaURL, ok := raw["media_url"].(string); ok {
+							chatMsg.MediaURL = mediaURL
+						}
 						msgBytes, _ := json.Marshal(chatMsg)
 						if chatMsg.Content != "" && chatMsg.RecipientID != uuid.Nil {
 							if chatMsg.IsBroadcast {
@@ -113,6 +116,9 @@ func (c *Client) ReadPump() {
 				}
 				if isBroadcast, ok := raw["is_broadcast"].(bool); ok {
 					chatMsg.IsBroadcast = isBroadcast
+				}
+				if mediaURL, ok := raw["media_url"].(string); ok {
+					chatMsg.MediaURL = mediaURL
 				}
 				msgBytes, _ := json.Marshal(chatMsg)
 				if chatMsg.Content != "" && chatMsg.RecipientID != uuid.Nil {
